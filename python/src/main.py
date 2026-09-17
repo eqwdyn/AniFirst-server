@@ -1,12 +1,12 @@
 import json
 import asyncio
+from  anime_parsers_ru.errors import NoResults
+from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 from getNewReleases import getNewReleases
 from getTrending import getTrending
 from getFullInfo import get_full_info
-from  anime_parsers_ru.errors import NoResults
-
-
-from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
+from searchByTitle import search_by_title
+from getHeroAnime import get_hero_anime
 
 
 def _decode(v):
@@ -100,6 +100,73 @@ async def consume_trending():
     finally:
         await consumer.stop()
 
+async def consume_hero_anime():
+    consumer = AIOKafkaConsumer(
+        'get_hero_anime',
+        bootstrap_servers='localhost:9092',
+        group_id='anifirst-kafka',
+        value_deserializer=lambda m: json.loads(m.decode('utf-8')),
+        auto_offset_reset='latest',
+        enable_auto_commit=True,
+    )
+    await consumer.start()
+    
+    try:
+        async for msg in consumer:
+            print("Message to hero")
+            hero = await get_hero_anime()
+            # print(hero)
+            await _consume_msg(msg, hero)
+    finally:
+        await consumer.stop()
+
+
+async def consume_search():
+    consumer = AIOKafkaConsumer(
+        'search_animes',
+        bootstrap_servers='localhost:9092',
+        group_id='anifirst-kafka',
+        value_deserializer=lambda m: json.loads(m.decode('utf-8')),
+        auto_offset_reset='latest',
+        enable_auto_commit=True,
+    )
+    await consumer.start()
+    
+    try:
+        async for msg in consumer:
+            payload = msg.value
+
+            try:
+                title = payload['title']
+            except:
+                print("WARNING: title is missing")
+                data = {"message": "title is missing", "error": "Missing"}
+                await _consume_msg(msg, data)
+                continue
+                
+            if not title:
+                print("WARNING: title is undefiend")
+                data = {"message": "title is undefiend", "error": "Missing"}
+                await _consume_msg(msg, data)
+                continue
+
+            print("Title: ", title, "\n")
+            try: 
+                trending = await search_by_title(title)
+            except NoResults:
+                print("ERROR: Anime was not found by title: ", title)
+                data = {"message": f"Anime was not found by title: {title}", "error": "Not found"}
+                await _consume_msg(msg, data)
+                continue
+            except:
+                data = {"message": "Unknown error", "error": "Unknown error"}
+                await _consume_msg(msg, data)
+                continue
+
+            await _consume_msg(msg, trending)
+    finally:
+        await consumer.stop()
+
 
 async def consume_full_info():
     consumer = AIOKafkaConsumer(
@@ -152,7 +219,9 @@ async def main():
     await asyncio.gather(
         consume_new_releases(),
         consume_trending(),
-        consume_full_info()
+        consume_hero_anime(),
+        consume_full_info(),
+        consume_search()
     )
 
 asyncio.run(main())

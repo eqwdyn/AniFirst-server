@@ -13,7 +13,9 @@ export class AppService {
   async onModuleInit() {
     this.client.subscribeToResponseOf('get_new_releases');
     this.client.subscribeToResponseOf('get_trending');
+    this.client.subscribeToResponseOf('get_hero_anime');
     this.client.subscribeToResponseOf('get_full_info');
+    this.client.subscribeToResponseOf('search_animes');
     await this.client.connect();
   }
 
@@ -70,7 +72,34 @@ export class AppService {
     return responseFromPython;
   }
 
-  private firstValueFromKafka(topic: string, data: Object): Promise<any> {
+  async getHeroAnime() {
+    const responseFromPython = await this.firstValueFromKafka(
+      'get_hero_anime',
+      {},
+    );
+
+    console.log(JSON.stringify(responseFromPython, null, 2));
+    const md = responseFromPython.material_data;
+    const parsed = {
+      title: md.title,
+      description: md.description,
+      tags: md.anime_genres,
+      posterUrl: md.anime_poster_url,
+      shikimori_id: responseFromPython.shikimori_id,
+    };
+
+    return parsed;
+  }
+
+  async searchAnimes(title: string) {
+    const responseFromPython = await this.firstValueFromKafka('search_animes', {
+      title,
+    });
+
+    return responseFromPython;
+  }
+
+  private firstValueFromKafka(topic: string, data?: Object): Promise<any> {
     return firstValueFrom(
       this.client.send(topic, data).pipe(
         timeout({ each: 10000 }),

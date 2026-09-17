@@ -17,8 +17,18 @@ export class AppController {
     return this.appService.getTrending(Number(limit) > 0 ? Number(limit) : 10);
   }
 
+  @Get('hero-anime')
+  getHeroAnime() {
+    return this.appService.getHeroAnime();
+  }
+
   @Get('anime/:id')
   getAnimeById(@Param('id') id: string) {
     return this.appService.getAnimeById(id);
+  }
+
+  @Get('search/:title')
+  searchAnimes(@Param('title') title: string) {
+    return this.appService.searchAnimes(title);
   }
 }
