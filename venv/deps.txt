@@ -1,2 +1,0 @@
-anime-parsers-ru
-kafka-python
