@@ -2,8 +2,8 @@ import json
 import asyncio
 from  anime_parsers_ru.errors import NoResults
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
-from getNewReleases import getNewReleases
-from getTrending import getTrending
+from getNewReleases import getNewReleases, get_new_releases_kodik
+from getTrending import getTrending, get_trending_kodik
 from getFullInfo import get_full_info
 from searchByTitle import search_by_title
 from getHeroAnime import get_hero_anime
@@ -79,6 +79,42 @@ async def consume_new_releases():
     finally:
         await new_releases_consumer.stop()
 
+async def consume_new_releases_kodik():
+    consumer = AIOKafkaConsumer(
+        'get_new_releases_kodik',
+        bootstrap_servers='localhost:9092',
+        group_id='anifirst-kafka',
+        value_deserializer=lambda m: json.loads(m.decode('utf-8')),
+        auto_offset_reset='latest',
+        enable_auto_commit=True,
+    )
+    await consumer.start()
+    
+    try:
+        async for msg in consumer:
+            payload = msg.value
+            limit = payload.get('limit', 10)
+            print("Limit: ", limit, "\n")
+            trending = await get_new_releases_kodik(limit)
+
+            parsed = []
+            for item in trending:
+                try:
+                    md = item["material_data"]
+                    if md["anime_poster_url"] == None or md["title"] == None or item["shikimori_id"] == None:
+                        continue
+
+                    parsed.append(item)
+                except:
+                    print("WARN: error while getting params of anime from kodik. This item was skipped")
+                    continue
+        
+            parsed = parsed[:limit]
+            await _consume_msg(msg, parsed)
+    finally:
+        await consumer.stop()
+
+
 async def consume_trending():
     consumer = AIOKafkaConsumer(
         'get_trending',
@@ -99,6 +135,42 @@ async def consume_trending():
             await _consume_msg(msg, trending)
     finally:
         await consumer.stop()
+
+async def consume_trending_kodik():
+    consumer = AIOKafkaConsumer(
+        'get_trending_kodik',
+        bootstrap_servers='localhost:9092',
+        group_id='anifirst-kafka',
+        value_deserializer=lambda m: json.loads(m.decode('utf-8')),
+        auto_offset_reset='latest',
+        enable_auto_commit=True,
+    )
+    await consumer.start()
+    
+    try:
+        async for msg in consumer:
+            payload = msg.value
+            limit = payload.get('limit', 10)
+            print("Limit: ", limit, "\n")
+            trending = await get_trending_kodik(limit)
+
+            parsed = []
+            for item in trending:
+                try:
+                    md = item["material_data"]
+                    if md["anime_poster_url"] == None or md["title"] == None or item["shikimori_id"] == None:
+                        continue
+
+                    parsed.append(item)
+                except:
+                    print("WARN: error while getting params of anime from kodik. This item was skipped")
+                    continue
+        
+            parsed = parsed[:limit]
+            await _consume_msg(msg, parsed)
+    finally:
+        await consumer.stop()
+
 
 async def consume_hero_anime():
     consumer = AIOKafkaConsumer(
@@ -218,7 +290,9 @@ async def consume_full_info():
 async def main():
     await asyncio.gather(
         consume_new_releases(),
+        consume_new_releases_kodik(),
         consume_trending(),
+        consume_trending_kodik(),
         consume_hero_anime(),
         consume_full_info(),
         consume_search()
