@@ -38,21 +38,3 @@ def get_kodik_genres() -> dict[str, list[str]]:
         "genres": _extract(KodikSearch.Genres),
         "anime_genres": _extract(KodikSearch.AnimeGenres),
     }
-
-
-# Пример использования
-async def main():
-    # Shikimori
-    shiki_ru = await get_shikimori_genres("ru")
-    shiki_en = await get_shikimori_genres("en")
-    print("Shikimori (RU):", shiki_ru[:5], "...")
-    print("Shikimori (EN):", shiki_en[:5], "...")
-
-    # Kodik (синхронно — жанры хранятся в контейнерах, без запросов к API)
-    kodik = get_kodik_genres()
-    print("Kodik genres:", kodik["genres"])
-    print("Kodik anime_genres:", kodik["anime_genres"])
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
