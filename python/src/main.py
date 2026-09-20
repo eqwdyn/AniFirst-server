@@ -1,11 +1,12 @@
 import json
 import asyncio
+from functools import wraps
 from  anime_parsers_ru.errors import NoResults
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 from getNewReleases import getNewReleases, get_new_releases_kodik
 from getTrending import getTrending, get_trending_kodik
 from getFullInfo import get_full_info
-from searchByTitle import search_by_title
+from searchByTitle import search_by_title, search_by_title_shikimori
 from getHeroAnime import get_hero_anime
 
 
@@ -58,26 +59,40 @@ async def _consume_msg(msg, data):
     await producer.stop()
     print('Response sent to: ', reply_to, 'corrId: ', correlation_id, "items count: ", len(data))
 
+def kafka_consumer(topic: str, group_id: str = "anifirst-kafka", **kwargs):
+    """Декоратор: создаёт consumer, стартует его, передаёт в функцию, останавливает."""
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs_inner):
+            consumer = AIOKafkaConsumer(
+                topic,
+                bootstrap_servers="localhost:9092",
+                group_id=group_id,
+                value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+                auto_offset_reset="latest",
+                enable_auto_commit=True,
+                **kwargs,
+            )
+            await consumer.start()
+            try:
+                return await func(consumer, *args, **kwargs_inner)
+            finally:
+                await consumer.stop()
 
-async def consume_new_releases():
-    new_releases_consumer = AIOKafkaConsumer(
-        'get_new_releases',
-        bootstrap_servers='localhost:9092',
-        group_id='anifirst-kafka',
-        value_deserializer=lambda m: json.loads(m.decode('utf-8')),
-        auto_offset_reset='latest',
-        enable_auto_commit=True,
-    )
-    await new_releases_consumer.start()
+        return wrapper
 
-    try:
-        async for msg in new_releases_consumer:
-            payload = msg.value
-            limit = payload.get('limit', 1)
-            new_releases = await getNewReleases(limit)
-            await _consume_msg(msg, new_releases)
-    finally:
-        await new_releases_consumer.stop()
+    return decorator
+
+
+@kafka_consumer("get_new_releases")
+async def consume_new_releases(consumer: AIOKafkaConsumer):
+    async for msg in consumer:
+        payload = msg.value
+        assert payload is not None
+        limit = payload.get("limit", 1)
+        page = payload.get("page", 1)
+        new_releases = await getNewReleases(limit, page)
+        await _consume_msg(msg, new_releases)
 
 async def consume_new_releases_kodik():
     consumer = AIOKafkaConsumer(
@@ -93,7 +108,8 @@ async def consume_new_releases_kodik():
     try:
         async for msg in consumer:
             payload = msg.value
-            limit = payload.get('limit', 10)
+            assert payload is not None
+            limit = payload.get('limit', 10) # type: ignore
             print("Limit: ", limit, "\n")
             trending = await get_new_releases_kodik(limit)
 
@@ -129,9 +145,11 @@ async def consume_trending():
     try:
         async for msg in consumer:
             payload = msg.value
+            assert payload is not None
             limit = payload.get('limit', 1)
+            page = payload.get('page', 1)
             print("Limit: ", limit, "\n")
-            trending = await getTrending(limit)
+            trending = await getTrending(limit, page)
             await _consume_msg(msg, trending)
     finally:
         await consumer.stop()
@@ -150,6 +168,7 @@ async def consume_trending_kodik():
     try:
         async for msg in consumer:
             payload = msg.value
+            assert payload is not None
             limit = payload.get('limit', 10)
             print("Limit: ", limit, "\n")
             trending = await get_trending_kodik(limit)
@@ -209,6 +228,7 @@ async def consume_search():
             payload = msg.value
 
             try:
+                assert payload is not None
                 title = payload['title']
             except:
                 print("WARNING: title is missing")
@@ -225,6 +245,53 @@ async def consume_search():
             print("Title: ", title, "\n")
             try: 
                 trending = await search_by_title(title)
+            except NoResults:
+                print("ERROR: Anime was not found by title: ", title)
+                data = {"message": f"Anime was not found by title: {title}", "error": "Not found"}
+                await _consume_msg(msg, data)
+                continue
+            except:
+                data = {"message": "Unknown error", "error": "Unknown error"}
+                await _consume_msg(msg, data)
+                continue
+
+            await _consume_msg(msg, trending)
+    finally:
+        await consumer.stop()
+
+async def consume_search_shikimori():
+    consumer = AIOKafkaConsumer(
+        'search_animes_shikimori',
+        bootstrap_servers='localhost:9092',
+        group_id='anifirst-kafka',
+        value_deserializer=lambda m: json.loads(m.decode('utf-8')),
+        auto_offset_reset='latest',
+        enable_auto_commit=True,
+    )
+    await consumer.start()
+    
+    try:
+        async for msg in consumer:
+            payload = msg.value
+
+            try:
+                assert payload is not None
+                title = payload['title']
+            except:
+                print("WARNING: title is missing")
+                data = {"message": "title is missing", "error": "Missing"}
+                await _consume_msg(msg, data)
+                continue
+                
+            if not title:
+                print("WARNING: title is undefiend")
+                data = {"message": "title is undefiend", "error": "Missing"}
+                await _consume_msg(msg, data)
+                continue
+
+            print("Title: ", title, "\n")
+            try: 
+                trending = await search_by_title_shikimori(title)
             except NoResults:
                 print("ERROR: Anime was not found by title: ", title)
                 data = {"message": f"Anime was not found by title: {title}", "error": "Not found"}
@@ -258,6 +325,7 @@ async def consume_full_info():
             payload = msg.value
             # print(json.dumps(msg.value))
             try:
+                assert payload is not None
                 id = payload['shikimori_id']
             except:
                 print("WARNING: shikimori_id is missing")
@@ -295,7 +363,8 @@ async def main():
         consume_trending_kodik(),
         consume_hero_anime(),
         consume_full_info(),
-        consume_search()
+        consume_search(),
+        consume_search_shikimori()
     )
 
 asyncio.run(main())

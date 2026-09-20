@@ -9,32 +9,36 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get('new-releases')
-  getNewReleases(@Query('limit') limit: string) {
+  getNewReleases(@Query('limit') limit: string, @Query('page') page: string) {
     console.log('Get new releases');
 
     return this.appService.getNewReleases(
       Number(limit) > 0 ? Number(limit) : 1,
+      Number(page) > 0 ? Number(page) : 1,
     );
   }
 
-  @Get('new-releases-kodik')
-  getNewReleasesKodik(@Query('limit') limit: string) {
-    return this.appService.getNewReleasesKodik(
-      Number(limit) > 0 ? Number(limit) : 20,
-    );
-  }
+  //   @Get('new-releases-kodik')
+  //   getNewReleasesKodik(@Query('limit') limit: string) {
+  //     return this.appService.getNewReleasesKodik(
+  //       Number(limit) > 0 ? Number(limit) : 20,
+  //     );
+  //   }
 
   @Get('trending')
-  getTrending(@Query('limit') limit: string) {
-    return this.appService.getTrending(Number(limit) > 0 ? Number(limit) : 1);
-  }
-
-  @Get('trending-kodik')
-  getTrendingKodik(@Query('limit') limit: string) {
-    return this.appService.getTrendingKodik(
-      Number(limit) > 0 ? Number(limit) : 20,
+  getTrending(@Query('limit') limit: string, @Query('page') page: string) {
+    return this.appService.getTrending(
+      Number(limit) > 0 ? Number(limit) : 1,
+      Number(page) > 0 ? Number(page) : 1,
     );
   }
+
+  //   @Get('trending-kodik')
+  //   getTrendingKodik(@Query('limit') limit: string) {
+  //     return this.appService.getTrendingKodik(
+  //       Number(limit) > 0 ? Number(limit) : 20,
+  //     );
+  //   }
 
   @Get('hero-anime')
   getHeroAnime() {
@@ -46,8 +50,13 @@ export class AppController {
     return this.appService.getAnimeById(id);
   }
 
-  @Get('search/:title')
+  @Get('search-kodik/:title')
   searchAnimes(@Param('title') title: string) {
     return this.appService.searchAnimes(title);
+  }
+
+  @Get('search-shikimori/:title')
+  searchAnimesShikimori(@Param('title') title: string) {
+    return this.appService.searchAnimesShikimori(title);
   }
 }

@@ -20,7 +20,9 @@ export class AppService {
 
     this.client.subscribeToResponseOf('get_hero_anime');
     this.client.subscribeToResponseOf('get_full_info');
+
     this.client.subscribeToResponseOf('search_animes');
+    this.client.subscribeToResponseOf('search_animes_shikimori');
     await this.client.connect();
   }
 
@@ -35,10 +37,10 @@ export class AppService {
     return this.parseAnimeFromKodik(item);
   }
 
-  async getNewReleases(limit: number) {
+  async getNewReleases(limit: number, page: number) {
     const responseFromPython = await this.firstValueFromKafka(
       'get_new_releases',
-      { limit },
+      { limit, page },
     );
 
     return responseFromPython;
@@ -58,9 +60,10 @@ export class AppService {
     );
   }
 
-  async getTrending(limit: number) {
+  async getTrending(limit: number, page: number) {
     const responseFromPython = await this.firstValueFromKafka('get_trending', {
       limit,
+      page,
     });
 
     return responseFromPython;
@@ -102,6 +105,17 @@ export class AppService {
     const responseFromPython = await this.firstValueFromKafka('search_animes', {
       title,
     });
+
+    return responseFromPython;
+  }
+
+  async searchAnimesShikimori(title: string) {
+    const responseFromPython = await this.firstValueFromKafka(
+      'search_animes_shikimori',
+      {
+        title,
+      },
+    );
 
     return responseFromPython;
   }

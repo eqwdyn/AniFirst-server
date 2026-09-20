@@ -1,9 +1,8 @@
-import asyncio
-from anime_parsers_ru import KodikParserAsync
+from anime_parsers_ru import KodikParserAsync, ShikimoriParserAsync
 
 
 KODIK_TOKEN = "56a768d08f43091901c44b54fe970049"
-async def search_by_title(title: str, limit: int = 10) -> list[dict]:
+async def search_by_title(title: str) -> list[dict]:
     """
     Поиск аниме по названию через Kodik.
     Возвращает список словарей, соответствующих IAnimeSearch.
@@ -11,7 +10,7 @@ async def search_by_title(title: str, limit: int = 10) -> list[dict]:
     parser = KodikParserAsync(KODIK_TOKEN)
 
     try:
-        results = await parser.search(title=title, limit=limit)
+        results = await parser.search(title=title)
 
         anime_list = []
         for item in results:
@@ -35,6 +34,33 @@ async def search_by_title(title: str, limit: int = 10) -> list[dict]:
             anime_list.append(anime)
 
         return anime_list
+
+    finally:
+        await parser.close_async_session()
+
+
+async def search_by_title_shikimori(title: str) -> list[dict]:
+    """
+    Поиск аниме по названию через Kodik.
+    Возвращает список словарей, соответствующих IAnimeSearch.
+    """
+    parser = ShikimoriParserAsync()
+
+    try:
+        results = await parser.search(title)
+
+        anime_list = []
+        for item in results:
+            anime = {
+                "shikimori_id": item.get("shikimori_id"),
+                "title": item.get("title"),
+                "originalTitle": item.get("original_title"),
+                "studio": item.get("studio", "Unknown"),
+                "posterUrl": item.get("poster", ""),
+            }
+            anime_list.append(anime)
+
+        return results
 
     finally:
         await parser.close_async_session()

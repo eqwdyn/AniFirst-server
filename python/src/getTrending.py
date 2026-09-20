@@ -1,8 +1,8 @@
 from anime_parsers_ru import ShikimoriParserAsync, KodikParserAsync
 
-async def getTrending(limit=1):
+async def getTrending(limit=1, page=1):
     parser = ShikimoriParserAsync()
-    animes = await parser.get_anime_list(page_limit=limit, sort_by="rating")
+    animes = await parser.get_anime_list(page_limit=limit, start_page=page, sort_by="rating")
     await parser.close_async_session()
     return animes
 
