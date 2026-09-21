@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  InternalServerErrorException,
+  Param,
+  Query,
+  UseInterceptors,
+} from '@nestjs/common';
 import { AppService } from './app.service.js';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 
@@ -40,14 +47,24 @@ export class AppController {
   //     );
   //   }
 
+  @Get('genres/shikimori')
+  getShikimoriGenres() {
+    return this.appService.getShikimoriGenres();
+  }
+
   @Get('hero-anime')
   getHeroAnime() {
     return this.appService.getHeroAnime();
   }
 
   @Get('anime/:id')
-  getAnimeById(@Param('id') id: string) {
-    return this.appService.getAnimeById(id);
+  async getAnimeById(@Param('id') id: string) {
+    const animes = await this.appService.getAnimeById(id);
+    if (!animes) {
+      throw new InternalServerErrorException();
+    }
+
+    return animes;
   }
 
   @Get('search-kodik/:title')

@@ -18,6 +18,8 @@ export class AppService {
     this.client.subscribeToResponseOf('get_trending');
     this.client.subscribeToResponseOf('get_trending_kodik');
 
+    this.client.subscribeToResponseOf('get_shikimori_genres');
+
     this.client.subscribeToResponseOf('get_hero_anime');
     this.client.subscribeToResponseOf('get_full_info');
 
@@ -27,14 +29,28 @@ export class AppService {
   }
 
   async getAnimeById(shikimori_id: string) {
-    console.log(shikimori_id);
+    // console.log(shikimori_id);
 
     const responseFromPython = await this.firstValueFromKafka('get_full_info', {
       shikimori_id,
     });
 
-    const item = responseFromPython[0];
-    return this.parseAnimeFromKodik(item);
+    console.log(JSON.stringify(responseFromPython, null, 2));
+
+    // const item = responseFromPython[0];
+    try {
+      const parsed = this.parseAnimeFromKodik(
+        responseFromPython.kodik_results[0],
+      );
+
+      return {
+        ...parsed,
+        related: responseFromPython.related,
+      };
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
   }
 
   async getNewReleases(limit: number, page: number) {
@@ -53,11 +69,9 @@ export class AppService {
         limit,
       },
     );
-    console.log(JSON.stringify(responseFromPython, null, 2));
+    // console.log(JSON.stringify(responseFromPython, null, 2));
 
-    return responseFromPython.map((item: any) =>
-      this.parseAnimeFromKodik(item),
-    );
+    return this.parseAnimesArrFromKodik(responseFromPython);
   }
 
   async getTrending(limit: number, page: number) {
@@ -76,11 +90,18 @@ export class AppService {
         limit,
       },
     );
-    console.log(JSON.stringify(responseFromPython, null, 2));
+    // console.log(JSON.stringify(responseFromPython, null, 2));
 
-    return responseFromPython.map((item: any) =>
-      this.parseAnimeFromKodik(item),
+    return this.parseAnimesArrFromKodik(responseFromPython);
+  }
+
+  async getShikimoriGenres(): Promise<string[]> {
+    const responseFromPython = await this.firstValueFromKafka(
+      'get_shikimori_genres',
+      {},
     );
+
+    return responseFromPython;
   }
 
   async getHeroAnime() {
@@ -118,6 +139,20 @@ export class AppService {
     );
 
     return responseFromPython;
+  }
+
+  private parseAnimesArrFromKodik(items: any[]) {
+    const parsedItems: IAnimeKodik[] = [];
+    for (const item of items) {
+      try {
+        parsedItems.push(this.parseAnimeFromKodik(item));
+      } catch (e) {
+        console.error('Error while parsing anime from kodik: ', e);
+        continue;
+      }
+    }
+
+    return parsedItems;
   }
 
   private parseAnimeFromKodik(item: any): IAnimeKodik {

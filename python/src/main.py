@@ -6,6 +6,7 @@ from getTrending import getTrending, get_trending_kodik
 from getFullInfo import get_full_info
 from searchByTitle import search_by_title, search_by_title_shikimori
 from getHeroAnime import get_hero_anime
+from getGenres import get_shikimori_genres
 from utils.consume_messages import consume_msg
 from utils.kafka_konsumer import kafka_consumer
 
@@ -81,6 +82,12 @@ async def consume_trending_kodik(consumer: AIOKafkaConsumer):
 
         parsed = parsed[:limit]
         await consume_msg(msg, parsed)
+
+@kafka_consumer("get_shikimori_genres")
+async def consume_shikimori_genres(consumer: AIOKafkaConsumer):
+    async for msg in consumer:
+        trending = await get_shikimori_genres()
+        await consume_msg(msg, trending)
 
 
 @kafka_consumer("get_hero_anime")
@@ -204,7 +211,8 @@ async def main():
         consume_hero_anime(), # type: ignore
         consume_full_info(), # type: ignore
         consume_search(), # type: ignore
-        consume_search_shikimori() # type: ignore
+        consume_search_shikimori(), # type: ignore
+        consume_shikimori_genres(), # type: ignore
     )
 
 asyncio.run(main())
