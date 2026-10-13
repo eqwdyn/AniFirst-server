@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
+import { KafkaService } from './kafka.service.js';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -16,9 +14,8 @@ import { CacheModule } from '@nestjs/cache-manager';
         },
       },
     ]),
-    CacheModule.register()
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  providers: [KafkaService],
+  exports: [KafkaService],
 })
-export class AppModule {}
+export class KafkaModule {}

@@ -2,6 +2,8 @@ from anime_parsers_ru import KodikParserAsync, ShikimoriParserAsync
 
 
 KODIK_TOKEN = "56a768d08f43091901c44b54fe970049"
+
+
 async def search_by_title(title: str) -> list[dict]:
     """
     Поиск аниме по названию через Kodik.
@@ -20,7 +22,8 @@ async def search_by_title(title: str) -> list[dict]:
             for r in [md.get("shikimori_rating"), md.get("kinopoisk_rating"), md.get("imdb_rating")]:
                 if r is not None and r > 0:
                     ratings.append(r)
-            avg_rating = round(sum(ratings) / len(ratings), 1) if ratings else 0
+            avg_rating = round(sum(ratings) / len(ratings),
+                               1) if ratings else 0
 
             anime = {
                 "kodik_id": item.get("id"),
@@ -41,7 +44,7 @@ async def search_by_title(title: str) -> list[dict]:
 
 async def search_by_title_shikimori(title: str) -> list[dict]:
     """
-    Поиск аниме по названию через Kodik.
+    Поиск аниме по названию через Shikimori.
     Возвращает список словарей, соответствующих IAnimeSearch.
     """
     parser = ShikimoriParserAsync()

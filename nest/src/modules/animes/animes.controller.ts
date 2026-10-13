@@ -6,20 +6,20 @@ import {
   Query,
   UseInterceptors,
 } from '@nestjs/common';
-import { AppService } from './app.service.js';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { AnimesService } from './animes.service.js';
 
 @Controller()
 @UseInterceptors(CacheInterceptor)
 @CacheTTL(60 * 1000)
-export class AppController {
-  constructor(private readonly appService: AppService) {}
+export class AnimesController {
+  constructor(private readonly animesService: AnimesService) {}
 
   @Get('new-releases')
   getNewReleases(@Query('limit') limit: string, @Query('page') page: string) {
     console.log('Get new releases');
 
-    return this.appService.getNewReleases(
+    return this.animesService.getNewReleases(
       Number(limit) > 0 ? Number(limit) : 1,
       Number(page) > 0 ? Number(page) : 1,
     );
@@ -27,14 +27,14 @@ export class AppController {
 
   //   @Get('new-releases-kodik')
   //   getNewReleasesKodik(@Query('limit') limit: string) {
-  //     return this.appService.getNewReleasesKodik(
+  //     return this.animesService.getNewReleasesKodik(
   //       Number(limit) > 0 ? Number(limit) : 20,
   //     );
   //   }
 
   @Get('trending')
   getTrending(@Query('limit') limit: string, @Query('page') page: string) {
-    return this.appService.getTrending(
+    return this.animesService.getTrending(
       Number(limit) > 0 ? Number(limit) : 1,
       Number(page) > 0 ? Number(page) : 1,
     );
@@ -42,24 +42,24 @@ export class AppController {
 
   //   @Get('trending-kodik')
   //   getTrendingKodik(@Query('limit') limit: string) {
-  //     return this.appService.getTrendingKodik(
+  //     return this.animesService.getTrendingKodik(
   //       Number(limit) > 0 ? Number(limit) : 20,
   //     );
   //   }
 
   @Get('genres/shikimori')
   getShikimoriGenres() {
-    return this.appService.getShikimoriGenres();
+    return this.animesService.getShikimoriGenres();
   }
 
   @Get('hero-anime')
   getHeroAnime() {
-    return this.appService.getHeroAnime();
+    return this.animesService.getHeroAnime();
   }
 
   @Get('anime/:id')
   async getAnimeById(@Param('id') id: string) {
-    const animes = await this.appService.getAnimeById(id);
+    const animes = await this.animesService.getAnimeById(id);
     if (!animes) {
       throw new InternalServerErrorException();
     }
@@ -69,11 +69,11 @@ export class AppController {
 
   @Get('search-kodik/:title')
   searchAnimes(@Param('title') title: string) {
-    return this.appService.searchAnimes(title);
+    return this.animesService.searchAnimes(title);
   }
 
   @Get('search-shikimori/:title')
   searchAnimesShikimori(@Param('title') title: string) {
-    return this.appService.searchAnimesShikimori(title);
+    return this.animesService.searchAnimesShikimori(title);
   }
 }

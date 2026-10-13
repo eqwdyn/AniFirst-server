@@ -1,51 +1,32 @@
-import {
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
-import { ClientKafka } from '@nestjs/microservices';
-import { catchError, firstValueFrom, timeout } from 'rxjs';
-import { IAnimeKodik } from './interfaces/AnimeKodik.js';
+import { Injectable } from '@nestjs/common';
+import { IAnimeKodik } from '../../interfaces/AnimeKodik.js';
+import { KafkaService } from '../../core/kafka/kafka.service.js';
 
 @Injectable()
-export class AppService {
-  constructor(@Inject('KAFKA_CLIENT') private client: ClientKafka) {}
-
-  async onModuleInit() {
-    this.client.subscribeToResponseOf('get_new_releases');
-    this.client.subscribeToResponseOf('get_new_releases_kodik');
-
-    this.client.subscribeToResponseOf('get_trending');
-    this.client.subscribeToResponseOf('get_trending_kodik');
-
-    this.client.subscribeToResponseOf('get_shikimori_genres');
-
-    this.client.subscribeToResponseOf('get_hero_anime');
-    this.client.subscribeToResponseOf('get_full_info');
-
-    this.client.subscribeToResponseOf('search_animes');
-    this.client.subscribeToResponseOf('search_animes_shikimori');
-    await this.client.connect();
-  }
+export class AnimesService {
+  constructor(private readonly kafkaClient: KafkaService) {}
 
   async getAnimeById(shikimori_id: string) {
-    // console.log(shikimori_id);
-
-    const responseFromPython = await this.firstValueFromKafka('get_full_info', {
-      shikimori_id,
-    });
+    const responseFromPython = await this.kafkaClient.firstValue(
+      'get_full_info',
+      {
+        shikimori_id,
+      },
+    );
 
     console.log(JSON.stringify(responseFromPython, null, 2));
 
-    // const item = responseFromPython[0];
     try {
       const parsed = this.parseAnimeFromKodik(
         responseFromPython.kodik_results[0],
       );
+      const related = responseFromPython.related.filter(
+        (item: any) => item.type !== 'Реклама',
+      );
 
       return {
         ...parsed,
-        related: responseFromPython.related,
+        related,
       };
     } catch (e) {
       console.error(e);
@@ -54,16 +35,38 @@ export class AppService {
   }
 
   async getNewReleases(limit: number, page: number) {
-    const responseFromPython = await this.firstValueFromKafka(
+    const responseFromPython = await this.kafkaClient.firstValue(
       'get_new_releases',
       { limit, page },
     );
 
-    return responseFromPython;
+    const animes = responseFromPython.map((item: any) => ({
+      ...item,
+      posterUrl: item.poster,
+    }));
+
+    return animes;
+  }
+
+  async getTrending(limit: number, page: number) {
+    const responseFromPython = await this.kafkaClient.firstValue(
+      'get_trending',
+      {
+        limit,
+        page,
+      },
+    );
+
+    const animes = responseFromPython.map((item: any) => ({
+      ...item,
+      posterUrl: item.poster,
+    }));
+
+    return animes;
   }
 
   async getNewReleasesKodik(limit: number): Promise<IAnimeKodik[]> {
-    const responseFromPython = await this.firstValueFromKafka(
+    const responseFromPython = await this.kafkaClient.firstValue(
       'get_new_releases_kodik',
       {
         limit,
@@ -74,17 +77,8 @@ export class AppService {
     return this.parseAnimesArrFromKodik(responseFromPython);
   }
 
-  async getTrending(limit: number, page: number) {
-    const responseFromPython = await this.firstValueFromKafka('get_trending', {
-      limit,
-      page,
-    });
-
-    return responseFromPython;
-  }
-
   async getTrendingKodik(limit: number): Promise<IAnimeKodik[]> {
-    const responseFromPython = await this.firstValueFromKafka(
+    const responseFromPython = await this.kafkaClient.firstValue(
       'get_trending_kodik',
       {
         limit,
@@ -96,16 +90,24 @@ export class AppService {
   }
 
   async getShikimoriGenres(): Promise<string[]> {
-    const responseFromPython = await this.firstValueFromKafka(
+    const responseFromPython = await this.kafkaClient.firstValue(
       'get_shikimori_genres',
       {},
     );
 
     return responseFromPython;
   }
+  async getShikimoriAnimeGenre(genre: string): Promise<string[]> {
+    const responseFromPython = await this.kafkaClient.firstValue(
+      'get_shikimori_animes_genre',
+      { genre },
+    );
+
+    return responseFromPython;
+  }
 
   async getHeroAnime() {
-    const responseFromPython = await this.firstValueFromKafka(
+    const responseFromPython = await this.kafkaClient.firstValue(
       'get_hero_anime',
       {},
     );
@@ -123,22 +125,30 @@ export class AppService {
   }
 
   async searchAnimes(title: string) {
-    const responseFromPython = await this.firstValueFromKafka('search_animes', {
-      title,
-    });
-
-    return responseFromPython;
-  }
-
-  async searchAnimesShikimori(title: string) {
-    const responseFromPython = await this.firstValueFromKafka(
-      'search_animes_shikimori',
+    const responseFromPython = await this.kafkaClient.firstValue(
+      'search_animes',
       {
         title,
       },
     );
 
     return responseFromPython;
+  }
+
+  async searchAnimesShikimori(title: string) {
+    const responseFromPython = await this.kafkaClient.firstValue(
+      'search_animes_shikimori',
+      {
+        title,
+      },
+    );
+
+    const animes = responseFromPython.map((item: any) => ({
+      ...item,
+      posterUrl: item.poster,
+    }));
+
+    return animes;
   }
 
   private parseAnimesArrFromKodik(items: any[]) {
@@ -219,23 +229,5 @@ export class AppService {
 
     const value = total / ratings.length;
     return Math.round(value * 10) / 10;
-  }
-
-  private firstValueFromKafka(topic: string, data?: Object): Promise<any> {
-    return firstValueFrom(
-      this.client.send(topic, data).pipe(
-        timeout({ each: 10000 }),
-        catchError((err) => {
-          if (err.name === 'TimeoutError') {
-            console.error('Kafka request timed out');
-            throw new InternalServerErrorException(
-              'Service is slow or unavailable',
-            );
-          }
-          console.error('Kafka request failed', err);
-          throw new InternalServerErrorException('Failed to fetch releases');
-        }),
-      ),
-    );
   }
 }

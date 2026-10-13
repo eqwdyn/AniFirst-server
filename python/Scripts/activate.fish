@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV 'D:\Code\VS code\project\AniFirst\AniFirst-server\python'
+set -gx VIRTUAL_ENV 'C:\Users\ludak\AppData\Local\Code projects\AniFirst-server\python'
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"Scripts $PATH

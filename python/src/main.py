@@ -7,6 +7,7 @@ from getFullInfo import get_full_info
 from searchByTitle import search_by_title, search_by_title_shikimori
 from getHeroAnime import get_hero_anime
 from getGenres import get_shikimori_genres
+from getAnimesByGenre import get_animes_by_genre
 from utils.consume_messages import consume_msg
 from utils.kafka_konsumer import kafka_consumer
 
@@ -40,7 +41,8 @@ async def consume_new_releases_kodik(consumer: AIOKafkaConsumer):
 
                 parsed.append(item)
             except:
-                print("WARN: error while getting params of anime from kodik. This item was skipped")
+                print(
+                    "WARN: error while getting params of anime from kodik. This item was skipped")
                 continue
 
         parsed = parsed[:limit]
@@ -77,11 +79,13 @@ async def consume_trending_kodik(consumer: AIOKafkaConsumer):
 
                 parsed.append(item)
             except:
-                print("WARN: error while getting params of anime from kodik. This item was skipped")
+                print(
+                    "WARN: error while getting params of anime from kodik. This item was skipped")
                 continue
 
         parsed = parsed[:limit]
         await consume_msg(msg, parsed)
+
 
 @kafka_consumer("get_shikimori_genres")
 async def consume_shikimori_genres(consumer: AIOKafkaConsumer):
@@ -123,7 +127,45 @@ async def consume_search(consumer: AIOKafkaConsumer):
             trending = await search_by_title(title)
         except NoResults:
             print("ERROR: Anime was not found by title: ", title)
-            data = {"message": f"Anime was not found by title: {title}", "error": "Not found"}
+            data = {"message": f"Anime was not found by title: {title}",
+                    "error": "Not found"}
+            await consume_msg(msg, data)
+            continue
+        except:
+            data = {"message": "Unknown error", "error": "Unknown error"}
+            await consume_msg(msg, data)
+            continue
+
+        await consume_msg(msg, trending)
+
+
+@kafka_consumer("get_shikimori_animes_genre")
+async def consume_get_shikimori_animes_genre(consumer: AIOKafkaConsumer):
+    async for msg in consumer:
+        payload = msg.value
+
+        try:
+            assert payload is not None
+            genre = payload['genre']
+        except:
+            print("WARNING: genre is missing")
+            data = {"message": "genre is missing", "error": "Missing"}
+            await consume_msg(msg, data)
+            continue
+
+        if not genre:
+            print("WARNING: genre is undefiend")
+            data = {"message": "genre is undefiend", "error": "Missing"}
+            await consume_msg(msg, data)
+            continue
+
+        print("Genre: ", genre, "\n")
+        try:
+            animes = await get_animes_by_genre(genre)
+        except NoResults:
+            print("ERROR: Animes was not found by genre: ", genre)
+            data = {"message": f"Animes was not found by genre: {genre}",
+                    "error": "Not found"}
             await consume_msg(msg, data)
             continue
         except:
@@ -159,7 +201,8 @@ async def consume_search_shikimori(consumer: AIOKafkaConsumer):
             trending = await search_by_title_shikimori(title)
         except NoResults:
             print("ERROR: Anime was not found by title: ", title)
-            data = {"message": f"Anime was not found by title: {title}", "error": "Not found"}
+            data = {"message": f"Anime was not found by title: {title}",
+                    "error": "Not found"}
             await consume_msg(msg, data)
             continue
         except:
@@ -195,7 +238,8 @@ async def consume_full_info(consumer: AIOKafkaConsumer):
             info = await get_full_info(id)
         except NoResults:
             print("ERROR: Anime was not found by shikimory id: ", id)
-            data = {"message": f"Anime was not found by shikimory id: {id}", "error": "Not found"}
+            data = {
+                "message": f"Anime was not found by shikimory id: {id}", "error": "Not found"}
             await consume_msg(msg, data)
             continue
 
@@ -204,15 +248,16 @@ async def consume_full_info(consumer: AIOKafkaConsumer):
 
 async def main():
     await asyncio.gather(
-        consume_new_releases(), # type: ignore
-        consume_new_releases_kodik(), # type: ignore
-        consume_trending(), # type: ignore
-        consume_trending_kodik(), # type: ignore
-        consume_hero_anime(), # type: ignore
-        consume_full_info(), # type: ignore
-        consume_search(), # type: ignore
-        consume_search_shikimori(), # type: ignore
-        consume_shikimori_genres(), # type: ignore
+        consume_new_releases(),  # type: ignore
+        consume_new_releases_kodik(),  # type: ignore
+        consume_trending(),  # type: ignore
+        consume_trending_kodik(),  # type: ignore
+        consume_hero_anime(),  # type: ignore
+        consume_full_info(),  # type: ignore
+        consume_search(),  # type: ignore
+        consume_search_shikimori(),  # type: ignore
+        consume_shikimori_genres(),  # type: ignore
+        # consume_get_shikimori_animes_genre(),  # type: ignore
     )
 
 asyncio.run(main())
