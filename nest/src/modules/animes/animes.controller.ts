@@ -33,19 +33,6 @@ export class AnimesController {
     );
   }
 
-  @Get('genres/shikimori')
-  getShikimoriGenres() {
-    return this.animesService.getShikimoriGenres();
-  }
-
-  @Get('genres/:name')
-  getAnimesByGenre(@Param('name') name: string, @Query('page') page: string) {
-    return this.animesService.getAnimeByGenres(
-      [name],
-      Number(page) ?? undefined,
-    );
-  }
-
   @Get('hero-anime')
   getHeroAnime() {
     return this.animesService.getHeroAnime();
@@ -59,11 +46,6 @@ export class AnimesController {
     }
 
     return animes;
-  }
-
-  @Get('search-kodik/:title')
-  searchAnimes(@Param('title') title: string) {
-    return this.animesService.searchAnimes(title);
   }
 
   @Get('search-shikimori/:title')

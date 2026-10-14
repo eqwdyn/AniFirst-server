@@ -65,53 +65,6 @@ export class AnimesService {
     return animes;
   }
 
-  async getNewReleasesKodik(limit: number): Promise<IAnimeKodik[]> {
-    const responseFromPython = await this.kafkaClient.firstValue(
-      'get_new_releases_kodik',
-      {
-        limit,
-      },
-    );
-    // console.log(JSON.stringify(responseFromPython, null, 2));
-
-    return this.parseAnimesArrFromKodik(responseFromPython);
-  }
-
-  async getTrendingKodik(limit: number): Promise<IAnimeKodik[]> {
-    const responseFromPython = await this.kafkaClient.firstValue(
-      'get_trending_kodik',
-      {
-        limit,
-      },
-    );
-    // console.log(JSON.stringify(responseFromPython, null, 2));
-
-    return this.parseAnimesArrFromKodik(responseFromPython);
-  }
-
-  async getShikimoriGenres(): Promise<string[]> {
-    const responseFromPython = await this.kafkaClient.firstValue(
-      'get_shikimori_genres',
-      {},
-    );
-
-    return responseFromPython;
-  }
-  async getAnimeByGenres(genres: string[], startPage = 1) {
-    const responseFromPython = await this.kafkaClient.firstValue(
-      'get_animes_by_genres',
-      { genres, start_page: startPage },
-    );
-    console.log(
-      'getAnimeByGenres handle \nGenres: ',
-      genres.toString(),
-      '\nResponse: ',
-      JSON.stringify(responseFromPython, null, 2),
-    );
-
-    return responseFromPython;
-  }
-
   async getHeroAnime() {
     const responseFromPython = await this.kafkaClient.firstValue(
       'get_hero_anime',
@@ -130,20 +83,9 @@ export class AnimesService {
     return parsed;
   }
 
-  async searchAnimes(title: string) {
-    const responseFromPython = await this.kafkaClient.firstValue(
-      'search_animes',
-      {
-        title,
-      },
-    );
-
-    return responseFromPython;
-  }
-
   async searchAnimesShikimori(title: string) {
     const responseFromPython = await this.kafkaClient.firstValue(
-      'search_animes_shikimori',
+      'search_animes',
       {
         title,
       },
@@ -155,20 +97,6 @@ export class AnimesService {
     }));
 
     return animes;
-  }
-
-  private parseAnimesArrFromKodik(items: any[]) {
-    const parsedItems: IAnimeKodik[] = [];
-    for (const item of items) {
-      try {
-        parsedItems.push(this.parseAnimeFromKodik(item));
-      } catch (e) {
-        console.error('Error while parsing anime from kodik: ', e);
-        continue;
-      }
-    }
-
-    return parsedItems;
   }
 
   private parseAnimeFromKodik(item: any): IAnimeKodik {

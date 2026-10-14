@@ -5,10 +5,9 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { GenresModule } from '../modules/genres/genres.module.js';
 
-// Получаем директорию текущего файла (для ES modules / import.meta)
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
 @Module({
   imports: [
     CacheModule.register({
@@ -19,6 +18,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
       serveRoot: '/static',
     }),
     AnimesModule,
+    GenresModule,
   ],
 })
 export class CoreModule {}
