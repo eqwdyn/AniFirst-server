@@ -1,6 +1,5 @@
 anime-parsers-ru
 kafka-python
-asyncio
 aiohttp
 aiokafka
 aiohttp-socks

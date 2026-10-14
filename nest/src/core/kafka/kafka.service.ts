@@ -19,7 +19,7 @@ export class KafkaService implements OnModuleInit {
     this.client.subscribeToResponseOf('get_trending_kodik');
 
     this.client.subscribeToResponseOf('get_shikimori_genres');
-    this.client.subscribeToResponseOf('get_shikimori_animes_genre');
+    this.client.subscribeToResponseOf('get_animes_by_genres');
 
     this.client.subscribeToResponseOf('get_hero_anime');
     this.client.subscribeToResponseOf('get_full_info');

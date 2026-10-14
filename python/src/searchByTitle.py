@@ -52,16 +52,16 @@ async def search_by_title_shikimori(title: str) -> list[dict]:
     try:
         results = await parser.search(title)
 
-        anime_list = []
-        for item in results:
-            anime = {
-                "shikimori_id": item.get("shikimori_id"),
-                "title": item.get("title"),
-                "originalTitle": item.get("original_title"),
-                "studio": item.get("studio", "Unknown"),
-                "posterUrl": item.get("poster", ""),
-            }
-            anime_list.append(anime)
+        # anime_list = []
+        # for item in results:
+        #     anime = {
+        #         "shikimori_id": item.get("shikimori_id"),
+        #         "title": item.get("title"),
+        #         "originalTitle": item.get("original_title"),
+        #         "studio": item.get("studio", "Unknown"),
+        #         "posterUrl": item.get("poster", ""),
+        #     }
+        #     anime_list.append(anime)
 
         return results
 

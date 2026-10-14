@@ -97,10 +97,16 @@ export class AnimesService {
 
     return responseFromPython;
   }
-  async getShikimoriAnimeGenre(genre: string): Promise<string[]> {
+  async getAnimeByGenres(genres: string[], startPage = 1) {
     const responseFromPython = await this.kafkaClient.firstValue(
-      'get_shikimori_animes_genre',
-      { genre },
+      'get_animes_by_genres',
+      { genres, start_page: startPage },
+    );
+    console.log(
+      'getAnimeByGenres handle \nGenres: ',
+      genres.toString(),
+      '\nResponse: ',
+      JSON.stringify(responseFromPython, null, 2),
     );
 
     return responseFromPython;

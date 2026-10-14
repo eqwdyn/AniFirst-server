@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
-import { KafkaModule } from './kafka/kafka.module.js';
 import { AnimesModule } from '../modules/animes/animes.module.js';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -19,7 +18,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
       rootPath: join(__dirname, '..', '..', 'static'),
       serveRoot: '/static',
     }),
-    KafkaModule,
     AnimesModule,
   ],
 })

@@ -107,6 +107,7 @@ async def consume_search(consumer: AIOKafkaConsumer):
     async for msg in consumer:
         payload = msg.value
 
+        title = None
         try:
             assert payload is not None
             title = payload['title']
@@ -139,32 +140,51 @@ async def consume_search(consumer: AIOKafkaConsumer):
         await consume_msg(msg, trending)
 
 
-@kafka_consumer("get_shikimori_animes_genre")
-async def consume_get_shikimori_animes_genre(consumer: AIOKafkaConsumer):
+@kafka_consumer("get_animes_by_genres")
+async def consume_get_animes_by_genres(consumer: AIOKafkaConsumer):
     async for msg in consumer:
         payload = msg.value
 
+        payload_genres = None
+        start_page = 1
         try:
             assert payload is not None
-            genre = payload['genre']
+            payload_genres = payload['genres']
+            start_page = payload['start_page']
         except:
-            print("WARNING: genre is missing")
-            data = {"message": "genre is missing", "error": "Missing"}
+            print("WARNING: get_animes_by_genres some is missing")
+            # data = {"message": "genre is missing", "error": "Missing"}
+            # await consume_msg(msg, data)
+            # continue
+
+        if not payload_genres or not len(payload_genres):
+            print("WARNING: genres is missing")
+            data = {"message": "genres is missing", "error": "Missing"}
             await consume_msg(msg, data)
             continue
 
-        if not genre:
-            print("WARNING: genre is undefiend")
-            data = {"message": "genre is undefiend", "error": "Missing"}
-            await consume_msg(msg, data)
-            continue
-
-        print("Genre: ", genre, "\n")
+        print("Genres: ", payload_genres, "\n")
         try:
-            animes = await get_animes_by_genre(genre)
+            trueGenres_map: dict[str, str] = await get_shikimori_genres()
+
+            matched_genres: list[str] = []
+            for eng_name, ru_name in trueGenres_map.items():
+                for payload_genre in payload_genres:
+                    if payload_genre in eng_name:
+                        matched_genres.append(ru_name)
+
+            if not matched_genres:
+                print(f"WARNING: Не найдено совпадений для жанров: {payload_genres}")
+                await consume_msg(msg, {
+                    "message": f"No matching genres found for: {payload_genres}",
+                    "error": "NotFound"
+                })
+                continue
+
+            animes = await get_animes_by_genre(matched_genres, start_page=start_page)
         except NoResults:
-            print("ERROR: Animes was not found by genre: ", genre)
-            data = {"message": f"Animes was not found by genre: {genre}",
+            print("ERROR: Animes was not found by genre: ", payload_genres)
+            data = {"message": f"Animes was not found by genre: {payload_genres}",
                     "error": "Not found"}
             await consume_msg(msg, data)
             continue
@@ -173,7 +193,8 @@ async def consume_get_shikimori_animes_genre(consumer: AIOKafkaConsumer):
             await consume_msg(msg, data)
             continue
 
-        await consume_msg(msg, trending)
+        await consume_msg(msg, animes)
+        print("Matched genres: ", matched_genres)
 
 
 @kafka_consumer("search_animes_shikimori")
@@ -181,6 +202,7 @@ async def consume_search_shikimori(consumer: AIOKafkaConsumer):
     async for msg in consumer:
         payload = msg.value
 
+        title = None
         try:
             assert payload is not None
             title = payload['title']
@@ -257,7 +279,7 @@ async def main():
         consume_search(),  # type: ignore
         consume_search_shikimori(),  # type: ignore
         consume_shikimori_genres(),  # type: ignore
-        # consume_get_shikimori_animes_genre(),  # type: ignore
+        consume_get_animes_by_genres(),  # type: ignore
     )
 
 asyncio.run(main())

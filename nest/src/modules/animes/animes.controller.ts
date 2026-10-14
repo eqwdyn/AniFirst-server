@@ -25,13 +25,6 @@ export class AnimesController {
     );
   }
 
-  //   @Get('new-releases-kodik')
-  //   getNewReleasesKodik(@Query('limit') limit: string) {
-  //     return this.animesService.getNewReleasesKodik(
-  //       Number(limit) > 0 ? Number(limit) : 20,
-  //     );
-  //   }
-
   @Get('trending')
   getTrending(@Query('limit') limit: string, @Query('page') page: string) {
     return this.animesService.getTrending(
@@ -40,16 +33,17 @@ export class AnimesController {
     );
   }
 
-  //   @Get('trending-kodik')
-  //   getTrendingKodik(@Query('limit') limit: string) {
-  //     return this.animesService.getTrendingKodik(
-  //       Number(limit) > 0 ? Number(limit) : 20,
-  //     );
-  //   }
-
   @Get('genres/shikimori')
   getShikimoriGenres() {
     return this.animesService.getShikimoriGenres();
+  }
+
+  @Get('genres/:name')
+  getAnimesByGenre(@Param('name') name: string, @Query('page') page: string) {
+    return this.animesService.getAnimeByGenres(
+      [name],
+      Number(page) ?? undefined,
+    );
   }
 
   @Get('hero-anime')
