@@ -6,6 +6,9 @@ import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { GenresModule } from '../modules/genres/genres.module.js';
+import { UsersModule } from '../modules/users/users.module.js';
+import { AuthModule } from '../modules/auth/auth.module.js';
+import { ConfigModule } from '@nestjs/config';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 @Module({
@@ -17,8 +20,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
       rootPath: join(__dirname, '..', '..', 'static'),
       serveRoot: '/static',
     }),
+    ConfigModule.forRoot({ isGlobal: true }),
     AnimesModule,
     GenresModule,
+    UsersModule,
+    AuthModule,
   ],
 })
 export class CoreModule {}
