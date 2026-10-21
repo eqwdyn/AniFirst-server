@@ -7,11 +7,15 @@ import {
   HttpStatus,
   Req,
   UnauthorizedException,
+  Get,
 } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 import { CreateUserDto } from '../users/dto/create-user.dto.js';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import type { Request } from 'express';
+import { Authorization } from '../../shared/decorators/auth.decorator.js';
+import { Authorized } from '../../shared/decorators/authorized.decorator.js';
+import { type SafeUser } from '../../shared/types/safeUser.js';
 
 @Controller('auth')
 export class AuthController {
@@ -25,6 +29,8 @@ export class AuthController {
     @Body() dto: CreateUserDto,
     @Res({ passthrough: true }) res: any,
   ) {
+    console.log('Login');
+
     const payload = await this.authService.validateUser(dto);
     const accessToken = this.authService.generateAccessToken(payload);
     const refreshToken = this.authService.generateRefreshToken({
@@ -52,6 +58,8 @@ export class AuthController {
     @Body() dto: CreateUserDto,
     @Res({ passthrough: true }) res: any,
   ) {
+    console.log('Register');
+
     const payload = await this.authService.createUser(dto);
     const accessToken = this.authService.generateAccessToken(payload);
     const refreshToken = this.authService.generateRefreshToken({
@@ -85,6 +93,15 @@ export class AuthController {
     const accessToken = this.authService.generateAccessToken(payload);
 
     return { accessToken };
+  }
+
+  @Get('me')
+  @Authorization()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Получение данных о пользователе' })
+  @ApiResponse({ status: 200 })
+  me(@Authorized() user: SafeUser) {
+    return user;
   }
 
   private parseEnvValDaysToMs(val: string | undefined): number | null {

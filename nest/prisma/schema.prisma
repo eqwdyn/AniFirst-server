@@ -13,6 +13,24 @@ model User {
     login    String @unique
     password String
 
-    favorite   Int[]
-    lastViewed Int[]
+    favorite   Favorite[]
+    lastViewed LastViewed[]
+}
+
+model Favorite {
+    id          Int  @id @default(autoincrement())
+    userId      Int
+    shikimoriId Int
+    user        User @relation(fields: [userId], references: [id])
+
+    @@unique([userId, shikimoriId])
+}
+
+model LastViewed {
+    id          Int  @id @default(autoincrement())
+    userId      Int
+    shikimoriId Int
+    user        User @relation(fields: [userId], references: [id])
+
+    @@unique([userId, shikimoriId])
 }

@@ -7,7 +7,12 @@ async function bootstrap() {
   const PORT = process.env.PORT ?? 7000;
 
   const app = await NestFactory.create(CoreModule);
-  app.enableCors();
+  app.enableCors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  });
   app.use(cookieParser());
 
   const config = new DocumentBuilder()

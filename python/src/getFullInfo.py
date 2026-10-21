@@ -1,4 +1,6 @@
 from anime_parsers_ru import KodikParserAsync, ShikimoriParserAsync
+import logging
+logger = logging.getLogger(__name__)
 
 
 KODIK_TOKEN = "56a768d08f43091901c44b54fe970049"
@@ -32,6 +34,11 @@ async def get_full_info(shikimori_id: str):
 
 
         return {"kodik_results": kodik_results, "related": related_items}
+    except Exception:
+        logger.warning(
+            "No value for get Full Info value",
+        )
+        return None
     finally:
         await kodik_parser.close_async_session()
         await shiki.close_async_session()

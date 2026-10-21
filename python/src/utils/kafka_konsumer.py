@@ -8,16 +8,25 @@ def kafka_consumer(topic: str, group_id: str = "anifirst-kafka", **kwargs):
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs_inner):
+            # consumer = AIOKafkaConsumer(
+            #     topic,
+            #     bootstrap_servers="localhost:9092",
+            #     group_id=group_id,
+            #     value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+            #     auto_offset_reset="latest",
+            #     enable_auto_commit=True,
+            #     **kwargs,
+            # )
             consumer = AIOKafkaConsumer(
                 topic,
                 bootstrap_servers="localhost:9092",
                 group_id=group_id,
                 value_deserializer=lambda m: json.loads(m.decode("utf-8")),
                 auto_offset_reset="latest",
-                enable_auto_commit=True,
-                **kwargs,
+                enable_auto_commit=False,
             )
             await consumer.start()
+            await consumer.seek_to_end()
             try:
                 return await func(consumer, *args, **kwargs_inner)
             finally:

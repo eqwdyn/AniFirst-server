@@ -1,6 +1,6 @@
 import {
+  ConflictException,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -32,6 +32,11 @@ export class AuthService {
   }
 
   async createUser(dto: CreateUserDto) {
+    const candidate = await this.usersService.findByLogin(dto.login);
+    if (candidate) {
+      throw new ConflictException('Login in use');
+    }
+
     const hashedPass = await this.hashPassword(dto.password);
     const user = await this.usersService.create({
       login: dto.login,

@@ -27,6 +27,8 @@ export class AnimesController {
 
   @Get('trending')
   getTrending(@Query('limit') limit: string, @Query('page') page: string) {
+    console.log('Get trending');
+
     return this.animesService.getTrending(
       Number(limit) > 0 ? Number(limit) : 1,
       Number(page) > 0 ? Number(page) : 1,

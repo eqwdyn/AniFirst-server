@@ -27,6 +27,6 @@ import { UsersModule } from '../users/users.module.js';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
-  exports: [AuthService],
+  exports: [AuthService, PassportModule, JwtModule], // <-- ДОБАВЬ PassportModule и JwtModule
 })
 export class AuthModule {}

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { PrismaService } from '../../core/prisma/prisma.service.js';
@@ -10,10 +10,6 @@ export class UsersService {
   async create(dto: CreateUserDto) {
     const user = await this.prisma.user.create({ data: dto });
     return user;
-  }
-
-  findAll() {
-    return `This action returns all users`;
   }
 
   async findByLogin(login: string) {
@@ -29,15 +25,91 @@ export class UsersService {
     return user;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async addToFavorite(shikimoriId: number, userId: number): Promise<void> {
+    const exists = await this.checkUserExists(userId);
+    if (!exists) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+
+    await this.prisma.favorite.upsert({
+      where: {
+        userId_shikimoriId: {
+          userId,
+          shikimoriId,
+        },
+      },
+      create: {
+        userId,
+        shikimoriId,
+      },
+      update: {
+        shikimoriId,
+      },
+    });
+  }
+  async deleteFromFavorite(shikimoriId: number, userId: number): Promise<void> {
+    const exists = await this.checkUserExists(userId);
+    if (!exists) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+
+    await this.prisma.favorite.delete({
+      where: {
+        userId_shikimoriId: {
+          userId,
+          shikimoriId,
+        },
+      },
+    });
   }
 
-  update(id: number, dto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async addLastViewed(shikimoriId: number, userId: number): Promise<void> {
+    const exists = await this.checkUserExists(userId);
+    if (!exists) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+
+    await this.prisma.lastViewed.upsert({
+      where: {
+        userId_shikimoriId: {
+          userId,
+          shikimoriId,
+        },
+      },
+      create: {
+        userId,
+        shikimoriId,
+      },
+      update: {
+        shikimoriId,
+      },
+    });
+  }
+  async deleteFromLastViewed(
+    shikimoriId: number,
+    userId: number,
+  ): Promise<void> {
+    const exists = await this.checkUserExists(userId);
+    if (!exists) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+
+    await this.prisma.lastViewed.delete({
+      where: {
+        userId_shikimoriId: {
+          userId,
+          shikimoriId,
+        },
+      },
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  private async checkUserExists(id: number) {
+    const user = await this.prisma.user.findFirst({
+      where: { id },
+      select: { id: true },
+    });
+
+    return !!user;
   }
 }

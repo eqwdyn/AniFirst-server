@@ -1,5 +1,7 @@
 from aiokafka import AIOKafkaProducer
 import json
+import logging
+logger = logging.getLogger(__name__)
 
 
 
@@ -29,6 +31,12 @@ def _proccess_reply(headers):
 
 
 async def consume_msg(msg, data):
+    if data == None:
+        logger.warning(
+            "Skipping send: no response value",
+        )
+        return
+
     headers = {}
     if msg.headers:
         for key, val in msg.headers:

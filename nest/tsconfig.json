@@ -1,9 +1,6 @@
 {
     "compilerOptions": {
-        // "module": "preserve",
-        // "module": "ESNext",
         "module": "nodenext",
-        // "moduleResolution": "bundler",
         "moduleResolution": "nodenext",
         "resolvePackageJsonExports": true,
         "esModuleInterop": true,

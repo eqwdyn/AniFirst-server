@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { IAnimeKodik } from '../../interfaces/AnimeKodik.js';
 import { KafkaService } from '../../core/kafka/kafka.service.js';
 
 @Injectable()
@@ -99,11 +98,11 @@ export class AnimesService {
     return animes;
   }
 
-  private parseAnimeFromKodik(item: any): IAnimeKodik {
+  private parseAnimeFromKodik(item: any) {
     const md = item.material_data;
     console.log(md);
 
-    const parsed: IAnimeKodik = {
+    const parsed = {
       shikimori_id: item.shikimori_id,
       title: md.anime_title,
       title_orig: item.title_orig,
