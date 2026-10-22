@@ -7,5 +7,6 @@ import { KafkaModule } from '../../core/kafka/kafka.module.js';
   providers: [AnimesService],
   controllers: [AnimesController],
   imports: [KafkaModule],
+  exports: [AnimesService],
 })
 export class AnimesModule {}

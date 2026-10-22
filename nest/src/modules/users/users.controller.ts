@@ -1,6 +1,7 @@
 import {
   Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
@@ -15,6 +16,15 @@ import { Authorization } from '../../shared/decorators/auth.decorator.js';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get('/favorite')
+  @Authorization()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Получить список избранных аниме' })
+  @ApiResponse({ status: 200 })
+  async getFavorite(@Authorized('id') userId: number) {
+    return this.usersService.getFavorite(userId);
+  }
+
   @Post('/favorite/:id')
   @Authorization()
   @HttpCode(HttpStatus.CREATED)
@@ -24,7 +34,7 @@ export class UsersController {
     @Authorized('id') userId: number,
     @Param('id') id: string,
   ) {
-    await this.usersService.addToFavorite(Number(id), userId);
+    await this.usersService.addToFavorite(id, userId);
   }
 
   @Delete('/favorite/:id')
@@ -36,19 +46,28 @@ export class UsersController {
     @Authorized('id') userId: number,
     @Param('id') id: string,
   ) {
-    await this.usersService.deleteFromFavorite(Number(id), userId);
+    await this.usersService.deleteFromFavorite(id, userId);
   }
 
-  @Post('last-viewed/:id')
+  @Get('/last-viewed')
+  @Authorization()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Получить список недавно просмотренных аниме' })
+  @ApiResponse({ status: 200 })
+  async getLastViewed(@Authorized('id') userId: number) {
+    return this.usersService.getLastViewed(userId);
+  }
+
+  @Post('/last-viewed/:id')
   @Authorization()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Добавить аниме в последнее' })
   @ApiResponse({ status: 201 })
-  async addLastViewed(
+  async addToLastViewed(
     @Authorized('id') userId: number,
     @Param('id') id: string,
   ) {
-    await this.usersService.addLastViewed(Number(id), userId);
+    await this.usersService.addLastViewed(id, userId);
   }
 
   @Delete('/last-viewed/:id')
@@ -60,6 +79,6 @@ export class UsersController {
     @Authorized('id') userId: number,
     @Param('id') id: string,
   ) {
-    await this.usersService.deleteFromLastViewed(Number(id), userId);
+    await this.usersService.deleteFromLastViewed(id, userId);
   }
 }

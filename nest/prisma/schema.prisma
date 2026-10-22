@@ -15,22 +15,31 @@ model User {
 
     favorite   Favorite[]
     lastViewed LastViewed[]
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
 }
 
 model Favorite {
-    id          Int  @id @default(autoincrement())
+    id          Int    @id @default(autoincrement())
     userId      Int
-    shikimoriId Int
-    user        User @relation(fields: [userId], references: [id])
+    shikimoriId String
+    user        User   @relation(fields: [userId], references: [id])
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
 
     @@unique([userId, shikimoriId])
 }
 
 model LastViewed {
-    id          Int  @id @default(autoincrement())
+    id          Int    @id @default(autoincrement())
     userId      Int
-    shikimoriId Int
-    user        User @relation(fields: [userId], references: [id])
+    shikimoriId String
+    user        User   @relation(fields: [userId], references: [id])
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
 
     @@unique([userId, shikimoriId])
 }
